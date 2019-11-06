@@ -124,7 +124,7 @@ uint8_t btn_down_pressed(void) {
 
 void render_set_temp(void) {
 	dtostrf(my_eeprom_data.set_temp, 2, 2, item_buf);
-	sprintf(line_buffer, "<%s?C>     ", item_buf);
+	sprintf(line_buffer, "<%s°C>     ", item_buf);
 	lcd_charMode(NORMALSIZE);
 	lcd_gotoxy(7,3);
 	lcd_puts(line_buffer);
@@ -132,7 +132,7 @@ void render_set_temp(void) {
 
 void render_cur_temp(void) {
 	dtostrf(temp, 2, 2, item_buf);
-	sprintf(line_buffer, "%s?C  ", item_buf);
+	sprintf(line_buffer, "%s°C  ", item_buf);
 	lcd_charMode(DOUBLESIZE);
 	lcd_gotoxy(5,0);
 	lcd_puts(line_buffer);
@@ -140,7 +140,7 @@ void render_cur_temp(void) {
 
 void render_diff_temp(void) {
 	dtostrf(temp > my_eeprom_data.set_temp ? temp - my_eeprom_data.set_temp : my_eeprom_data.set_temp - temp, 2, 2, item_buf);
-	sprintf(line_buffer, "<%s?C>     ", item_buf);
+	sprintf(line_buffer, "<%s°C>     ", item_buf);
 	lcd_charMode(NORMALSIZE);
 	lcd_gotoxy(7,5);
 	lcd_puts(line_buffer);
