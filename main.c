@@ -54,13 +54,7 @@ void timer0_init(void) {
 
 // Each 32 ms
 ISR(TIMER0_OVF_vect) {
-	static uint8_t timer_read_sensor = 0;
-
-	++timer_read_sensor;
-	if (timer_read_sensor >= 160) { // Every 160 * 32 ms = 5120 ms = 5.12 sec
-		bit_set(event_flags, EVENT_READ_SENSOR);
-		timer_read_sensor = 0;
-	}
+	// Hint: Every 160 * 32 ms = 5120 ms = 5.12 sec
 
 	TCNT0 = TIMER0_INIT_VAL;
 }
@@ -79,6 +73,16 @@ void timer1_init(void) {
 
 // Each ~1 sec
 ISR(TIMER1_OVF_vect) {
+	static uint8_t timer_read_sensor = 0;
+
+	++timer_read_sensor;
+	if (timer_read_sensor == 10) {
+		bit_set(event_flags, EVENT_SENSOR_START_CONV);
+	} else if (timer_read_sensor > 10) {
+		bit_set(event_flags, EVENT_SENSOR_READ_TEMP);
+		timer_read_sensor = 0;
+	}
+
 	if (eeprom_update_timer) {
 		--eeprom_update_timer;
 		if (!eeprom_update_timer) {
@@ -229,7 +233,9 @@ int main(void)
 	}
 
 	// Get first sample of temp from sensor while "Loading..." is rendered on display
-	temp = ds18b20_gettemp();
+	ds18b20_start_conv();
+	ds18b20_wait_until_conv_ready();
+	temp = ds18b20_read_temp();
 	prev_temp = temp;
 	
 	// Render initial text (static)
@@ -255,9 +261,16 @@ int main(void)
 		}
 		// /Event: display on
 		
+		// Event: start temp sensor conv
+		if (bit_test(event_flags, EVENT_SENSOR_START_CONV)) {
+			ds18b20_start_conv();
+			bit_clear(event_flags, EVENT_SENSOR_START_CONV);
+		}
+		// /Event: start temp sensor conv
+
 		// Call temp sensor
-		if (bit_test(event_flags, EVENT_READ_SENSOR)) {
-			temp = ds18b20_gettemp();
+		if (bit_test(event_flags, EVENT_SENSOR_READ_TEMP)) {
+			temp = ds18b20_read_temp();
 			
 			render_temp_change();
 			
@@ -266,7 +279,7 @@ int main(void)
 			render_cur_temp();
 			render_diff_temp();
 			
-			bit_clear(event_flags, EVENT_READ_SENSOR);
+			bit_clear(event_flags, EVENT_SENSOR_READ_TEMP);
 		}
 		// /Call temp sensor
 		
