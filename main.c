@@ -13,9 +13,7 @@
 // Check display on/off logic
 // Check display rendering
 // One setup func instead 3 func
-// Check EEPROM save address (eeprom special name)
 // Check btn up/down logic
-// Add display on btn (maybe off too)
 
 // EEPROM
 typedef struct {
@@ -23,6 +21,7 @@ typedef struct {
 	uint8_t is_set;
 } MY_EEPROM_DATA;
 
+MY_EEPROM_DATA EEMEM my_eeprom_addr;
 MY_EEPROM_DATA my_eeprom_data = {0.0, 0};
 
 // Flags
@@ -227,7 +226,7 @@ int main(void)
 	bit_set(status_flags, STATUS_DISPLAY_ON);
 	render_loading();
 	
-	eeprom_read_block(&my_eeprom_data, 0, sizeof(MY_EEPROM_DATA));
+	eeprom_read_block(&my_eeprom_data, &my_eeprom_addr, sizeof(MY_EEPROM_DATA));
 	if (my_eeprom_data.is_set != 28) {
 		my_eeprom_data.set_temp = 22;
 		my_eeprom_data.is_set = 28;
@@ -355,7 +354,7 @@ int main(void)
 		
 		// Event: update EEPROM
 		if (bit_test(event_flags, EVENT_UPDATE_EEPROM)) {
-			eeprom_write_block(&my_eeprom_data, 0, sizeof(MY_EEPROM_DATA));
+			eeprom_write_block(&my_eeprom_data, &my_eeprom_addr, sizeof(MY_EEPROM_DATA));
 			bit_clear(event_flags, EVENT_UPDATE_EEPROM);
 		}
 		// /Event: update EEPROM
