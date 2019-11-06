@@ -1,11 +1,11 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
-#define TEMP_HYSTERESIS 0.5
+#define TEMP_HYSTERESIS 0.25
 #define TEMP_BTN_STEP 0.05
 #define TEMP_LOCK_SEC 3
 #define TEMP_UPDATE_INTERVAL_SEC 5
-#define TEMP_STORE_VALUES 3
+// #define TEMP_STORE_VALUES 3
 
 #define RELAY_DDR DDRD
 #define RELAY_PORT PORTD

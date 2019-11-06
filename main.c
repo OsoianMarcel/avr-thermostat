@@ -16,7 +16,6 @@
 // Check EEPROM save address (eeprom special name)
 // Check btn up/down logic
 // Add display on btn (maybe off too)
-// Add hardware ON led (low loght)
 
 // EEPROM
 typedef struct {
@@ -76,9 +75,9 @@ ISR(TIMER1_OVF_vect) {
 	static uint8_t timer_read_sensor = 0;
 
 	++timer_read_sensor;
-	if (timer_read_sensor == 10) {
+	if (timer_read_sensor == TEMP_UPDATE_INTERVAL_SEC) {
 		bit_set(event_flags, EVENT_SENSOR_START_CONV);
-	} else if (timer_read_sensor > 10) {
+	} else if (timer_read_sensor > TEMP_UPDATE_INTERVAL_SEC) {
 		bit_set(event_flags, EVENT_SENSOR_READ_TEMP);
 		timer_read_sensor = 0;
 	}
@@ -107,8 +106,8 @@ ISR(TIMER1_OVF_vect) {
 
 void ports_init() {
 	// Buttons
-	BTN_DDR &= ~((1 << BTN_UP_PIN) | (1 << BTN_DOWN_PIN));
-	BTN_PORT |= (1 << BTN_UP_PIN) | (1 << BTN_DOWN_PIN);
+	BTN_DDR &= ~((1 << BTN_UP_PIN) | (1 << BTN_DOWN_PIN) | (1 << BTN_DISPLAY_PIN));
+	BTN_PORT |= (1 << BTN_UP_PIN) | (1 << BTN_DOWN_PIN) | (1 << BTN_DISPLAY_PIN);
 	
 	// Relays
 	RELAY_DDR |= (1 << RELAY_HEAT_PIN) | (1 << RELAY_COOL_PIN);
@@ -120,6 +119,10 @@ uint8_t btn_up_pressed(void) {
 
 uint8_t btn_down_pressed(void) {
 	return !bit_test(BTN_PIN, BTN_DOWN_PIN);
+}
+
+uint8_t btn_display_pressed(void) {
+	return !bit_test(BTN_PIN, BTN_DISPLAY_PIN);
 }
 
 void render_set_temp(void) {
@@ -298,7 +301,7 @@ int main(void)
 			
 			render_set_temp();
 			render_diff_temp();
-			} else if (btn_down_pressed()) {
+		} else if (btn_down_pressed()) {
 			my_eeprom_data.set_temp -= TEMP_BTN_STEP;
 			
 			if (my_eeprom_data.set_temp < -30.0) {
@@ -312,6 +315,9 @@ int main(void)
 			
 			render_set_temp();
 			render_diff_temp();
+		} else if (btn_display_pressed()) {
+			bit_set(event_flags, EVENT_DISPLAY_ON);
+			display_off_timer = DISPLAY_OFF_SEC;
 		}
 		// /Set temp logic
 		
