@@ -9,12 +9,6 @@
 #include "lcd.h"
 #include "ds18b20.h"
 
-// TODO:
-// Check display on/off logic
-// Check display rendering
-// One setup func instead 3 func
-// Check btn up/down logic
-
 // EEPROM
 typedef struct {
 	double set_temp;
@@ -223,16 +217,19 @@ void render_init(void) {
 	lcd_puts_p(PSTR("Uptime <5m>"));
 }
 
-void display_on_if(void) {
+void display_on_if(uint8_t init_render) {
 	// On if off
 	if (!bit_test(status_flags, STATUS_DISPLAY_ON)) {
 		lcd_init(LCD_DISP_ON);
 		bit_set(status_flags, STATUS_DISPLAY_ON);
-		render_init();
-		render_cur_temp();
-		render_set_temp();
-		render_diff_temp();
-		render_mode();
+		
+		if (init_render) {
+			render_init();
+			render_cur_temp();
+			render_set_temp();
+			render_diff_temp();
+			render_mode();
+		}
 	}
 }
 
@@ -244,14 +241,18 @@ void display_off_if(void) {
 	}
 }
 
-int main(void)
-{
+void system_setup() {
 	ports_init();
 	timer0_init();
 	timer1_init();
+}
+
+int main(void)
+{
+	system_setup();
 	
-	lcd_init(LCD_DISP_ON);
-	bit_set(status_flags, STATUS_DISPLAY_ON);
+	display_on_if(0);
+	
 	render_loading();
 	
 	eeprom_read_block(&my_eeprom_data, &my_eeprom_addr, sizeof(MY_EEPROM_DATA));
@@ -286,7 +287,7 @@ int main(void)
 		
 		// Event: display on
 		if (bit_test(event_flags, EVENT_DISPLAY_ON)) {
-			display_on_if();
+			display_on_if(1);
 			bit_clear(event_flags, EVENT_DISPLAY_ON);
 		}
 		// /Event: display on
