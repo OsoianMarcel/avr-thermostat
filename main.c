@@ -125,6 +125,10 @@ uint8_t btn_display_pressed(void) {
 }
 
 void render_set_temp(void) {
+	if (!bit_test(status_flags, STATUS_DISPLAY_ON)) {
+		return;
+	}
+	
 	dtostrf(my_eeprom_data.set_temp, 2, 2, item_buf);
 	sprintf(line_buffer, "<%s°C>     ", item_buf);
 	lcd_charMode(NORMALSIZE);
@@ -133,6 +137,10 @@ void render_set_temp(void) {
 }
 
 void render_cur_temp(void) {
+	if (!bit_test(status_flags, STATUS_DISPLAY_ON)) {
+		return;
+	}
+	
 	dtostrf(temp, 2, 2, item_buf);
 	sprintf(line_buffer, "%s°C  ", item_buf);
 	lcd_charMode(DOUBLESIZE);
@@ -141,6 +149,10 @@ void render_cur_temp(void) {
 }
 
 void render_diff_temp(void) {
+	if (!bit_test(status_flags, STATUS_DISPLAY_ON)) {
+		return;
+	}
+	
 	dtostrf(temp > my_eeprom_data.set_temp ? temp - my_eeprom_data.set_temp : my_eeprom_data.set_temp - temp, 2, 2, item_buf);
 	sprintf(line_buffer, "<%s°C>     ", item_buf);
 	lcd_charMode(NORMALSIZE);
@@ -149,6 +161,10 @@ void render_diff_temp(void) {
 }
 
 void render_temp_change(void) {
+	if (!bit_test(status_flags, STATUS_DISPLAY_ON)) {
+		return;
+	}
+	
 	lcd_charMode(NORMALSIZE);
 	lcd_gotoxy(7,6);
 	if (temp > prev_temp) {
@@ -161,6 +177,10 @@ void render_temp_change(void) {
 }
 
 void render_mode(void) {
+	if (!bit_test(status_flags, STATUS_DISPLAY_ON)) {
+		return;
+	}
+	
 	lcd_charMode(NORMALSIZE);
 	lcd_gotoxy(7,4);
 	if (bit_test(RELAY_PORT, RELAY_HEAT_PIN)) {
@@ -173,12 +193,20 @@ void render_mode(void) {
 }
 
 void render_loading(void) {
+	if (!bit_test(status_flags, STATUS_DISPLAY_ON)) {
+		return;
+	}
+	
 	lcd_charMode(DOUBLESIZE);
 	lcd_home();
 	lcd_puts_p(PSTR("Loading..."));
 }
 
 void render_init(void) {
+	if (!bit_test(status_flags, STATUS_DISPLAY_ON)) {
+		return;
+	}
+	
 	lcd_charMode(DOUBLESIZE);
 	lcd_home();
 	lcd_puts_p(PSTR("T: "));
@@ -270,7 +298,7 @@ int main(void)
 		}
 		// /Event: start temp sensor conv
 
-		// Call temp sensor
+		// Event: Read temp sensor
 		if (bit_test(event_flags, EVENT_SENSOR_READ_TEMP)) {
 			temp = ds18b20_read_temp();
 			
@@ -283,9 +311,9 @@ int main(void)
 			
 			bit_clear(event_flags, EVENT_SENSOR_READ_TEMP);
 		}
-		// /Call temp sensor
+		// /Event: Read temp sensor
 		
-		// Set temp logic
+		// Btn logic
 		if (btn_up_pressed()) {
 			my_eeprom_data.set_temp += TEMP_BTN_STEP;
 			
@@ -318,7 +346,7 @@ int main(void)
 			bit_set(event_flags, EVENT_DISPLAY_ON);
 			display_off_timer = DISPLAY_OFF_SEC;
 		}
-		// /Set temp logic
+		// /Btn logic
 		
 		// Relay logic
 		if (!bit_test(RELAY_PORT, RELAY_HEAT_PIN)) { // Heat is off
@@ -328,7 +356,7 @@ int main(void)
 					render_mode();
 				}
 			}
-			} else { // Heat is on
+		} else { // Heat is on
 			if (temp >= my_eeprom_data.set_temp) {
 				bit_clear(RELAY_PORT, RELAY_HEAT_PIN); // Turn heat off
 				render_mode();
@@ -343,7 +371,7 @@ int main(void)
 					render_mode();
 				}
 			}
-			} else { // Cool is on
+		} else { // Cool is on
 			if (temp <= my_eeprom_data.set_temp) {
 				bit_clear(RELAY_PORT, RELAY_COOL_PIN); // Turn cool off
 				render_mode();
