@@ -27,6 +27,7 @@ uint8_t lock_temp_timer = 0;
 uint8_t eeprom_update_timer = 0;
 uint8_t display_off_timer = DISPLAY_OFF_SEC;
 
+uint8_t status = 0;
 double temp;
 double prev_temp;
 char item_buf[8];
@@ -93,6 +94,8 @@ ISR(TIMER1_OVF_vect) {
 		lock_temp_timer--;
 	}
 	
+	bit_set(event_flags, EVENT_ONCE_IN_SEC);
+	
 	TCNT1 = TIMER1_INIT_VAL;
 }
 // /Timer1
@@ -118,6 +121,18 @@ uint8_t btn_display_pressed(void) {
 	return !bit_test(BTN_PIN, BTN_DISPLAY_PIN);
 }
 
+void render_cur_temp(void) {
+	if (!bit_test(status_flags, STATUS_DISPLAY_ON)) {
+		return;
+	}
+	
+	dtostrf(temp, 2, 2, item_buf);
+	sprintf(line_buffer, "%s°C  ", item_buf);
+	lcd_charMode(DOUBLESIZE);
+	lcd_gotoxy(5,0);
+	lcd_puts(line_buffer);
+}
+
 void render_set_temp(void) {
 	if (!bit_test(status_flags, STATUS_DISPLAY_ON)) {
 		return;
@@ -130,16 +145,20 @@ void render_set_temp(void) {
 	lcd_puts(line_buffer);
 }
 
-void render_cur_temp(void) {
+void render_mode(void) {
 	if (!bit_test(status_flags, STATUS_DISPLAY_ON)) {
 		return;
 	}
 	
-	dtostrf(temp, 2, 2, item_buf);
-	sprintf(line_buffer, "%s°C  ", item_buf);
-	lcd_charMode(DOUBLESIZE);
-	lcd_gotoxy(5,0);
-	lcd_puts(line_buffer);
+	lcd_charMode(NORMALSIZE);
+	lcd_gotoxy(7,4);
+	if (bit_test(RELAY_PORT, RELAY_HEAT_PIN)) {
+		lcd_puts_p(PSTR("<heat>"));
+		} else if (bit_test(RELAY_PORT, RELAY_COOL_PIN)) {
+		lcd_puts_p(PSTR("<cool>"));
+		} else {
+		lcd_puts_p(PSTR("<off> "));
+	}
 }
 
 void render_diff_temp(void) {
@@ -163,26 +182,24 @@ void render_temp_change(void) {
 	lcd_gotoxy(7,6);
 	if (temp > prev_temp) {
 		lcd_puts_p(PSTR("<up>  "));
-		} else if (temp < prev_temp) {
+	} else if (temp < prev_temp) {
 		lcd_puts_p(PSTR("<down>"));
-		} else {
+	} else {
 		lcd_puts_p(PSTR("<none>"));
 	}
 }
 
-void render_mode(void) {
+void render_status(void) {
 	if (!bit_test(status_flags, STATUS_DISPLAY_ON)) {
 		return;
 	}
 	
 	lcd_charMode(NORMALSIZE);
-	lcd_gotoxy(7,4);
-	if (bit_test(RELAY_PORT, RELAY_HEAT_PIN)) {
-		lcd_puts_p(PSTR("<heat>"));
-		} else if (bit_test(RELAY_PORT, RELAY_COOL_PIN)) {
-		lcd_puts_p(PSTR("<cool>"));
-		} else {
-		lcd_puts_p(PSTR("<off> "));
+	lcd_gotoxy(8,7);
+	if (status == 1) {
+		lcd_puts_p(PSTR("_"));
+	} else {
+		lcd_puts_p(PSTR(" "));
 	}
 }
 
@@ -196,7 +213,7 @@ void render_loading(void) {
 	lcd_puts_p(PSTR("Loading..."));
 }
 
-void render_init(void) {
+void render_static(void) {
 	if (!bit_test(status_flags, STATUS_DISPLAY_ON)) {
 		return;
 	}
@@ -212,9 +229,18 @@ void render_init(void) {
 	lcd_gotoxy(0,5);
 	lcd_puts_p(PSTR("Diff "));
 	lcd_gotoxy(0,6);
-	lcd_puts_p(PSTR("Change <up>"));
+	lcd_puts_p(PSTR("Change <none>"));
 	lcd_gotoxy(0,7);
-	lcd_puts_p(PSTR("Uptime <5m>"));
+	lcd_puts_p(PSTR("Status "));
+}
+
+void render_values(void) {
+	render_cur_temp();
+	render_set_temp();
+	render_mode();
+	render_diff_temp();
+	render_temp_change();
+	render_status();
 }
 
 void display_on_if(uint8_t init_render) {
@@ -224,11 +250,8 @@ void display_on_if(uint8_t init_render) {
 		bit_set(status_flags, STATUS_DISPLAY_ON);
 		
 		if (init_render) {
-			render_init();
-			render_cur_temp();
-			render_set_temp();
-			render_diff_temp();
-			render_mode();
+			render_static();
+			render_values();
 		}
 	}
 }
@@ -270,12 +293,8 @@ int main(void)
 	prev_temp = temp;
 	
 	// Render initial text (static)
-	render_init();
-	
-	render_cur_temp();
-	render_set_temp();
-	render_diff_temp();
-	render_mode();
+	render_static();
+	render_values();
 	
 	while(1) {
 		// Event: display off
@@ -387,6 +406,14 @@ int main(void)
 			bit_clear(event_flags, EVENT_UPDATE_EEPROM);
 		}
 		// /Event: update EEPROM
+		
+		// Event: once in sec
+		if (bit_test(event_flags, EVENT_ONCE_IN_SEC)) {
+			status = status == 1 ? 0 : 1;
+			render_status();
+			bit_clear(event_flags, EVENT_ONCE_IN_SEC);
+		}
+		// /Event: once in sec
 		
 		_delay_ms(25);
 	}
