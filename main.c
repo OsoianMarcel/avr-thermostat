@@ -35,7 +35,7 @@ char line_buffer[24];
 
 // Timer0
 void timer0_init(void) {
-	TCCR0 |= (1<<CS02) |  (1<<CS00);
+	TCCR0 |= (1<<CS02) | (1<<CS00);
 	TCCR0 &= ~(1<<CS01);
 	
 	// Set timer0 initial value
@@ -48,7 +48,6 @@ void timer0_init(void) {
 // Each 32 ms
 ISR(TIMER0_OVF_vect) {
 	// Hint: Every 160 * 32 ms = 5120 ms = 5.12 sec
-
 	TCNT0 = TIMER0_INIT_VAL;
 }
 // /Timer0
@@ -270,8 +269,7 @@ void system_setup() {
 	timer1_init();
 }
 
-int main(void)
-{
+int main(void) {
 	system_setup();
 	
 	display_on_if(0);
