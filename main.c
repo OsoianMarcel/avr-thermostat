@@ -153,9 +153,9 @@ void render_mode(void) {
 	lcd_gotoxy(7,4);
 	if (bit_test(RELAY_PORT, RELAY_HEAT_PIN)) {
 		lcd_puts_p(PSTR("<heat>"));
-		} else if (bit_test(RELAY_PORT, RELAY_COOL_PIN)) {
+	} else if (bit_test(RELAY_PORT, RELAY_COOL_PIN)) {
 		lcd_puts_p(PSTR("<cool>"));
-		} else {
+	} else {
 		lcd_puts_p(PSTR("<off> "));
 	}
 }
@@ -234,6 +234,10 @@ void render_static(void) {
 }
 
 void render_values(void) {
+	if (!bit_test(status_flags, STATUS_DISPLAY_ON)) {
+		return;
+	}
+
 	render_cur_temp();
 	render_set_temp();
 	render_mode();
