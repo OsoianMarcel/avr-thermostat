@@ -19,13 +19,13 @@ MY_EEPROM_DATA EEMEM my_eeprom_addr;
 MY_EEPROM_DATA my_eeprom_data = {0.0, 0};
 
 // Flags
-uint8_t event_flags = 0;
+volatile uint8_t event_flags = 0;
 uint8_t status_flags = 0;
 
 // Timers
-uint8_t lock_temp_timer = 0;
-uint8_t eeprom_update_timer = 0;
-uint8_t display_off_timer = DISPLAY_OFF_SEC;
+volatile uint8_t lock_temp_timer = 0;
+volatile uint8_t eeprom_update_timer = 0;
+volatile uint8_t display_off_timer = DISPLAY_OFF_SEC;
 
 uint8_t status = 0;
 double temp;
