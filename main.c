@@ -271,6 +271,7 @@ void system_setup() {
 	ports_init();
 	timer0_init();
 	timer1_init();
+	sei();
 }
 
 int main(void) {
