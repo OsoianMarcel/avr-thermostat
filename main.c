@@ -16,22 +16,35 @@ typedef struct {
 } MY_EEPROM_DATA;
 
 MY_EEPROM_DATA EEMEM my_eeprom_addr;
-MY_EEPROM_DATA my_eeprom_data = {0.0, 0};
+MY_EEPROM_DATA my_eeprom_data;
 
 // Flags
-volatile uint8_t event_flags = 0;
-uint8_t status_flags = 0;
+volatile uint8_t event_flags;
+uint8_t status_flags;
 
 // Timers
-volatile uint8_t lock_temp_timer = 0;
-volatile uint8_t eeprom_update_timer = 0;
-volatile uint8_t display_off_timer = DISPLAY_OFF_SEC;
+volatile uint8_t lock_temp_timer;
+volatile uint8_t eeprom_update_timer;
+volatile uint8_t display_off_timer;
 
-uint8_t status = 0;
+uint8_t status;
 double temp;
 double prev_temp;
 char item_buf[8];
 char line_buffer[24];
+
+void init_global_vars() {
+	// Flags
+	event_flags = 0;
+	status_flags = 0;
+
+	// Timers
+	lock_temp_timer = 0;
+	eeprom_update_timer = 0;
+	display_off_timer = DISPLAY_OFF_SEC;
+
+	status = 0;
+}
 
 // Timer0
 void timer0_init(void) {
@@ -268,6 +281,7 @@ void display_off_if(void) {
 }
 
 void system_setup() {
+	init_global_vars();
 	ports_init();
 	timer0_init();
 	timer1_init();
