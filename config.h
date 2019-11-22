@@ -12,6 +12,7 @@
 #define RELAY_PIN PIND
 #define RELAY_HEAT_PIN PD6
 #define RELAY_COOL_PIN PD7
+#define RELAY_BEEP_PIN PD5
 
 #define BTN_DDR DDRC
 #define BTN_PORT PORTC

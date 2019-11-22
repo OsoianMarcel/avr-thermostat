@@ -27,7 +27,7 @@ volatile uint8_t lock_temp_timer;
 volatile uint8_t eeprom_update_timer;
 volatile uint8_t display_off_timer;
 
-uint8_t status;
+unsigned long int ticker;
 double temp;
 double prev_temp;
 char item_buf[8];
@@ -43,7 +43,7 @@ void init_global_vars() {
 	eeprom_update_timer = 0;
 	display_off_timer = DISPLAY_OFF_SEC;
 
-	status = 0;
+	ticker = 0;
 }
 
 // Timer0
@@ -118,7 +118,7 @@ void ports_init() {
 	BTN_PORT |= (1 << BTN_UP_PIN) | (1 << BTN_DOWN_PIN) | (1 << BTN_DISPLAY_PIN);
 	
 	// Relays
-	RELAY_DDR |= (1 << RELAY_HEAT_PIN) | (1 << RELAY_COOL_PIN);
+	RELAY_DDR |= (1 << RELAY_HEAT_PIN) | (1 << RELAY_COOL_PIN) | (1 << RELAY_BEEP_PIN);
 }
 
 uint8_t btn_up_pressed(void) {
@@ -131,6 +131,14 @@ uint8_t btn_down_pressed(void) {
 
 uint8_t btn_display_pressed(void) {
 	return !bit_test(BTN_PIN, BTN_DISPLAY_PIN);
+}
+
+void switch_beep(uint8_t on) {
+	if (on) {
+		bit_set(RELAY_PORT, RELAY_BEEP_PIN);
+	} else {
+		bit_clear(RELAY_PORT, RELAY_BEEP_PIN);
+	}
 }
 
 void render_cur_temp(void) {
@@ -207,12 +215,10 @@ void render_status(void) {
 	}
 	
 	lcd_charMode(NORMALSIZE);
-	lcd_gotoxy(8,7);
-	if (status == 1) {
-		lcd_puts_p(PSTR("_"));
-	} else {
-		lcd_puts_p(PSTR(" "));
-	}
+	lcd_gotoxy(7,7);
+	
+	sprintf(line_buffer, "<%lu>", ticker);
+	lcd_puts(line_buffer);
 }
 
 void render_loading(void) {
@@ -286,6 +292,10 @@ void system_setup() {
 	timer0_init();
 	timer1_init();
 	sei();
+	
+	switch_beep(1);
+	_delay_ms(100);
+	switch_beep(0);
 }
 
 int main(void) {
@@ -426,7 +436,7 @@ int main(void) {
 		
 		// Event: once in sec
 		if (bit_test(event_flags, EVENT_ONCE_IN_SEC)) {
-			status = status == 1 ? 0 : 1;
+			ticker++;
 			render_status();
 			bit_clear(event_flags, EVENT_ONCE_IN_SEC);
 		}
