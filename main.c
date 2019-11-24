@@ -43,7 +43,7 @@ void init_global_vars() {
 	eeprom_update_timer = 0;
 	display_off_timer = DISPLAY_OFF_SEC;
 
-	ticker = 0;
+	ticker = 0L;
 }
 
 // Timer0
@@ -83,7 +83,7 @@ ISR(TIMER1_OVF_vect) {
 	++timer_read_sensor;
 	if (timer_read_sensor == TEMP_UPDATE_INTERVAL_SEC) {
 		bit_set(event_flags, EVENT_SENSOR_START_CONV);
-	} else if (timer_read_sensor > TEMP_UPDATE_INTERVAL_SEC) {
+	} else if (timer_read_sensor > (TEMP_UPDATE_INTERVAL_SEC + 1)) {
 		bit_set(event_flags, EVENT_SENSOR_READ_TEMP);
 		timer_read_sensor = 0;
 	}

@@ -136,12 +136,12 @@ double ds18b20_read_temp() {
 	temperature_l = ds18b20_readbyte();
 	temperature_h = ds18b20_readbyte();
 
+	//convert the 12 bit value obtained
+	retd = ( ( temperature_h << 8 ) + temperature_l ) * 0.0625;
+	
 	#if DS18B20_STOPINTERRUPTONREAD == 1
 	sei();
 	#endif
-
-	//convert the 12 bit value obtained
-	retd = ( ( temperature_h << 8 ) + temperature_l ) * 0.0625;
 
 	return retd;
 }
